@@ -1,4 +1,4 @@
-import RightSidebar from "@/components/RightSidebar";
+import RightSidebar from "@/components/ui/RightSidebar";
 import HeaderBox from "@/components/ui/HeaderBox";
 import TotalBalanceBox from "@/components/ui/TotalBalanceBox";
 import React from "react";
