@@ -19,14 +19,18 @@ import React, { useState } from "react";
 import CustomInput from "./CustomInput";
 import { authFormSchema } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { signIn, signUp } from "@/lib/actions/user.action";
 
 const AuthForm = ({ type }: { type: string }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const formSchema = authFormSchema(type);
 
   // 1. Define your form.
-  const form = useForm<z.infer<typeof authFormSchema>>({
-    resolver: zodResolver(authFormSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -34,13 +38,33 @@ const AuthForm = ({ type }: { type: string }) => {
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof authFormSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
 
     setIsLoading(true);
-    console.log(values);
-    console.log("it is working");
+
+    try {
+      //Sign up with Appwrite & create a plaid link token
+      if (type === "sign-up") {
+        const newUser = await signUp(data);
+        setUser(newUser);
+      }
+      if (type === "sign-in") {
+        const response = await signIn({
+          email: data?.email,
+          password: data?.password,
+        });
+        if (response) {
+          router.push("/");
+        }
+      }
+    } catch (error) {
+      console.log("Error");
+    } finally {
+      setIsLoading(false);
+    }
+
     setIsLoading(false);
   }
 
@@ -75,22 +99,117 @@ const AuthForm = ({ type }: { type: string }) => {
         <>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <CustomInput
-                control={form.control}
-                id="email"
-                name="email"
-                label="Email"
-                type="email"
-                placeholder="Enter Your Email"
-              />
-              <CustomInput
-                id="password"
-                control={form.control}
-                name="password"
-                label="Password"
-                type="password"
-                placeholder="Enter Your Password"
-              />
+              {type === "sign-up" && (
+                <>
+                  <div className="flex gap-4">
+                    <CustomInput
+                      control={form.control}
+                      id="firstName"
+                      name="firstName"
+                      label="First Name"
+                      type="text"
+                      placeholder="First Name"
+                    />
+                    <CustomInput
+                      control={form.control}
+                      id="lastName"
+                      name="lastName"
+                      label="Last Name"
+                      type="text"
+                      placeholder="Last Name"
+                    />
+                  </div>
+                  <CustomInput
+                    control={form.control}
+                    id="address"
+                    name="address"
+                    label="Address"
+                    type="text"
+                    placeholder="Address"
+                  />
+                  <CustomInput
+                    control={form.control}
+                    id="city"
+                    name="city"
+                    label="City"
+                    type="text"
+                    placeholder="City"
+                  />
+                  <div className="flex gap-4">
+                    <CustomInput
+                      control={form.control}
+                      id="state"
+                      name="state"
+                      label="State"
+                      type="text"
+                      placeholder="State"
+                    />
+                    <CustomInput
+                      control={form.control}
+                      id="postalCode"
+                      name="postalCode"
+                      label="Postal Code"
+                      type="text"
+                      placeholder="Postal Code"
+                    />
+                  </div>
+                  <div className="flex gap-12">
+                    <CustomInput
+                      control={form.control}
+                      id="dateOfBirth"
+                      name="dateOfBirth"
+                      label="Date of Birth"
+                      type="date"
+                      placeholder="dd-mm-yyyy"
+                    />
+                    <CustomInput
+                      control={form.control}
+                      id="ssn"
+                      name="ssn"
+                      label="SSN"
+                      type="text"
+                      placeholder="SSN"
+                    />
+                  </div>
+                  <CustomInput
+                    control={form.control}
+                    id="email"
+                    name="email"
+                    label="Email"
+                    type="email"
+                    placeholder="Enter Your Email"
+                  />
+                  <CustomInput
+                    id="password"
+                    control={form.control}
+                    name="password"
+                    label="Password"
+                    type="password"
+                    placeholder="Enter Your Password"
+                  />
+                </>
+              )}
+              {type === "sign-in" && (
+                <>
+                  {" "}
+                  <CustomInput
+                    control={form.control}
+                    id="email"
+                    name="email"
+                    label="Email"
+                    type="email"
+                    placeholder="Enter Your Email"
+                  />
+                  <CustomInput
+                    id="password"
+                    control={form.control}
+                    name="password"
+                    label="Password"
+                    type="password"
+                    placeholder="Enter Your Password"
+                  />
+                </>
+              )}
 
               <div className="flex flex-col gap-4">
                 <Button className="form-btn" type="submit" disabled={isLoading}>
@@ -110,10 +229,15 @@ const AuthForm = ({ type }: { type: string }) => {
           <footer className="flex justify-center gap-1">
             <p className="text-14 font-normal text-gray-600">
               {type === "sign-in"
-                ? "Don't have an Account?"
-                : "Already have an Account?"}
+                ? "Don't have an account?"
+                : "Already have an account?"}
             </p>
-            <Link href={type === "sign-in" ? "/sign-up" : "/sign-in"}></Link>
+            <Link
+              href={type === "sign-in" ? "/sign-up" : "/sign-in"}
+              className="form-link"
+            >
+              {type === "sign-in" ? "Sign up" : "Sign in"}
+            </Link>
           </footer>
         </>
       )}
